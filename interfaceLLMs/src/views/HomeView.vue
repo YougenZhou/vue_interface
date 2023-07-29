@@ -1,5 +1,6 @@
 <script setup>
 import {ref} from 'vue'
+import axios from "axios";
 
 const selectedModel = ref(null)
 const llmAll = ref(['ChatGLM', 'LLaMA', 'MiniMax', 'Bloomz', 'Claude'])
@@ -44,8 +45,33 @@ function rmSelect() {
 const loadingModel = ref(false)
 
 function loadModel() {
-  loadingModel.value = true
-
+  if (!isSelect.value) {
+    ElMessage({
+      showClose: true,
+      grouping: true,
+      message: '请先选择模型和对应参数量，并按确认！',
+      type: 'error'
+    })
+  } else {
+    loadingModel.value = true
+    axios.get('loadModel', {
+      params: {
+        model_name: selectedModel.value,
+        param_size: paramSize.value
+      }
+    }).then((res) => {
+      const data = res.data
+      loadingModel.value = false
+    }).catch((error) => {
+      loadingModel.value = false
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '加载模型失败！' + error,
+        type: 'error'
+      })
+    })
+  }
 }
 </script>
 
