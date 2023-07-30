@@ -1,6 +1,6 @@
 <script setup>
 import {ref} from 'vue'
-import axios from "axios";
+import axios from "axios"
 
 const selectedModel = ref(null)
 const llmAll = ref(['ChatGLM', 'LLaMA', 'MiniMax', 'Bloomz', 'Claude'])
@@ -72,6 +72,78 @@ function loadModel() {
       })
     })
   }
+}
+
+const inputText = ref(null)
+const modelAnswer = ref(null)
+const answerOK = ref(false)
+const answerRight = ref(null)
+
+async function submitPrompt() {
+  if (!inputText.value) {
+    ElMessage({
+      showClose: true,
+      grouping: true,
+      message: '请先输入内容！',
+      type: 'error'
+    })
+  } else {
+    answerOK.value = true
+    const data = {
+      "prompt": inputText.value
+    }
+    await axios.post('getAnswer', data).then(res => {
+      answerOK.value = false
+      modelAnswer.value = res.data.msg
+    }).catch(error => {
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '服务器出错了！请稍后再试～',
+        type: 'error'
+      })
+    })
+
+    await axios.get('getRightAnswer', {params: data}).then(res => {
+      answerRight.value = res.data.msg
+    })
+  }
+}
+
+const removeContext = () => {
+  inputText.value = null
+  modelAnswer.value = null
+}
+
+const answerRate = ref(null)
+
+const reInputText = ref(null)
+const submitReInput = async () => {
+  if (!reInputText.value) {
+    ElMessage({
+      showClose: true,
+      grouping: true,
+      message: '请先输入改写后的内容！',
+      type: 'error'
+    })
+  } else {
+    const data = {
+      "rewrite": reInputText.value
+    }
+    await axios.post('reWriteAnswer', data).then(res => {
+    }).catch(error => {
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '服务器出错了！请稍后再试～',
+        type: 'error'
+      })
+    })
+  }
+}
+
+const removeReInput = () => {
+  reInputText.value = null
 }
 </script>
 
@@ -162,16 +234,20 @@ function loadModel() {
       </el-aside>
       <el-main v-loading="loadingModel">
         <div>
-          <p>请输入测试的Prompt</p>
+          <p style="margin-bottom: 6px">请输入测试的Prompt</p>
           <el-input
               v-model="inputText"
-              :rows="4"
+              :rows="5"
               placeholder="Please input"
               type="textarea"
           />
+          <div style="margin-top: 6px; margin-bottom: 6px">
+            <el-button color="#626aef" @click="submitPrompt">提交</el-button>
+            <el-button type="warning" @click="removeContext">清空</el-button>
+          </div>
         </div>
         <div>
-          <p>模型的输出结果</p>
+          <p style="margin-bottom: 6px">模型的输出结果</p>
           <div class="demo-rate-block">
             <el-text class="mx-1">{{ modelAnswer }}</el-text>
           </div>
@@ -179,7 +255,7 @@ function loadModel() {
         <el-row :gutter="20">
           <el-col :span="12">
             <div>
-              <p>可参考的答案</p>
+              <p style="margin-bottom: 6px; margin-top: 6px">可参考的答案</p>
               <div class="demo-rate-block">
                 <el-text class="mx-1">{{ answerRight }}</el-text>
               </div>
@@ -187,7 +263,7 @@ function loadModel() {
           </el-col>
           <el-col :span="12">
             <div>
-              <p>请你给模型的输出结果打个分</p>
+              <p style="margin-bottom: 6px; margin-top: 6px">请你给模型的输出结果打个分</p>
               <div class="demo-rate-block">
                 <el-rate v-model="answerRate" size="large"/>
               </div>
@@ -195,13 +271,17 @@ function loadModel() {
           </el-col>
         </el-row>
         <div>
-          <p>如果觉得模型的输出结果不够好，麻烦进行改写哦～</p>
+          <p style="margin-bottom: 6px; margin-top: 6px">如果觉得模型的输出结果不够好，麻烦进行改写哦～</p>
           <el-input
-              v-model="inputText"
+              v-model="reInputText"
               :rows="4"
               placeholder="Please input"
               type="textarea"
           />
+        </div>
+        <div style="margin-top: 6px; margin-bottom: 6px">
+          <el-button color="#626aef" @click="submitReInput">提交</el-button>
+          <el-button type="warning" @click="removeReInput">清空</el-button>
         </div>
       </el-main>
     </el-container>
