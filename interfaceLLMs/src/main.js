@@ -5,7 +5,7 @@ import App from './App.vue'
 import router from './router'
 import axios from "axios"
 
-axios.defaults.baseURL = 'http://localhost:994/webapi/'
+axios.defaults.baseURL = 'http://youkenchaw.top:5000'
 axios.defaults.headers['Content-Type'] = 'application/json'
 
 const app = createApp(App)

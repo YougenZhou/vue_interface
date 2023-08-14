@@ -64,14 +64,21 @@ function loadModel() {
     })
   } else {
     loadingModel.value = true
-    axios.get('loadModel', {
+    axios.get('webapi/loadModel', {
       params: {
-        model_name: selectedModel.value,
-        param_size: paramSize.value
+        model_a: selectedModelA.value,
+        model_b: selectedModelB.value,
+        data_source: selectedDataSource.value
       }
     }).then((res) => {
       const data = res.data
       loadingModel.value = false
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: data['msg'],
+        type: 'success'
+      })
     }).catch((error) => {
       loadingModel.value = false
       ElMessage({
@@ -156,8 +163,11 @@ const submitReInput = async () => {
   }
 }
 
-const removeReInput = () => {
-  reInputText.value = null
+const submitResult = () => {
+  const data = {
+    'model_name': selectedModelA.value
+  }
+  axios.get('webapi/submitResult', data)
 }
 </script>
 
@@ -306,7 +316,7 @@ const removeReInput = () => {
           </el-col>
         </el-row>
         <div style="margin-top: 6px;">
-            <el-button color="#626aef" @click="submitPrompt">提交结果</el-button>
+            <el-button color="#626aef" @click="submitResult">提交结果</el-button>
           </div>
       </el-main>
     </el-container>
