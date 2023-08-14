@@ -2,28 +2,37 @@
 import {ref} from 'vue'
 import axios from "axios"
 
-const selectedModel = ref(null)
-const llmAll = ref(['ChatGLM', 'LLaMA', 'MiniMax', 'Bloomz', 'Claude'])
-const paramSizeAll = ref(null)
-const paramSize = ref(null)
+const selectedModelA = ref(null)
+const selectedModelB = ref(null)
+const llmAll = ref(['ChatGLM', 'LLaMA', 'Bloomz', 'ChatGPT'])
 
-function selectModel() {
-  const allModelParamSize = {
-    'ChatGLM': ['6B'],
-    'LLaMA': ['7B', '13B']
-  }
-  paramSizeAll.value = allModelParamSize[selectedModel.value]
-  paramSize.value = null
+function selectModelA() {
+  selectedModelB.value = null
 }
+
+function selectModelB() {
+  if (selectedModelB.value == selectedModelA.value) {
+    ElMessage({
+      showClose: true,
+      grouping: true,
+      message: '请选择不同的模型',
+      type: 'error'
+    })
+    selectedModelB.value = null
+  }
+}
+
+const selectedDataSource = ref(null)
+const dataSources = ref(['D4-Dialogue', 'Case-QA'])
 
 const isSelect = ref(false)
 
 function yesSelect() {
-  if (!selectedModel.value || !paramSize.value) {
+  if (!selectedModelA.value || !selectedModelB.value || !selectedDataSource.value) {
     ElMessage({
       showClose: true,
       grouping: true,
-      message: '请先选择模型及其对应参数量！',
+      message: '请先选择参与对比测评的模型和数据',
       type: 'error'
     })
   } else {
@@ -32,13 +41,14 @@ function yesSelect() {
 }
 
 function rmSelect() {
-  ElMessageBox.alert('确定要清除当前选择的参数吗？', {
+  ElMessageBox.confirm('请确定是否要清除当前选择的模型', {
     confirmButtonText: '确定',
-    callback: () => {
-      isSelect.value = false
-      selectedModel.value = null
-      paramSize.value = null
-    }
+    cancelButtonText: '取消'
+  }).then(() => {
+    isSelect.value = false
+    selectedModelA.value = null
+    selectedModelB.value = null
+    selectedDataSource.value = null
   })
 }
 
@@ -49,7 +59,7 @@ function loadModel() {
     ElMessage({
       showClose: true,
       grouping: true,
-      message: '请先选择模型和对应参数量，并按确认！',
+      message: '请先选择模型，并按确认按钮',
       type: 'error'
     })
   } else {
@@ -73,6 +83,10 @@ function loadModel() {
     })
   }
 }
+
+const inputContext = ref([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+const betterModel = ref(null)
 
 const inputText = ref(null)
 const modelAnswer = ref(null)
@@ -153,13 +167,13 @@ const removeReInput = () => {
       <el-aside width="380px">
         <div class="selectGroup">
           <div class="m-4">
-            <p>选择模型</p>
+            <p>选择模型A</p>
             <el-select
-                v-model="selectedModel"
+                v-model="selectedModelA"
                 :disabled="isSelect"
                 placeholder="Select"
                 style="width: 280px"
-                @change="selectModel"
+                @change="selectModelA"
             >
               <el-option
                   v-for="(llm, index) in llmAll"
@@ -171,54 +185,72 @@ const removeReInput = () => {
           </div>
 
           <div class="m-4">
-            <p>选择参数量</p>
+            <p>选择模型B</p>
             <el-select
-                v-model="paramSize"
+                v-model="selectedModelB"
                 :disabled="isSelect"
                 placeholder="Select"
                 style="width: 280px"
+                @change="selectModelB"
             >
               <el-option
-                  v-for="(llmParam, index) in paramSizeAll"
+                  v-for="(llmName, index) in llmAll"
                   :key="index"
-                  :label="llmParam"
-                  :value="llmParam"
+                  :label="llmName"
+                  :value="llmName"
               />
             </el-select>
           </div>
 
           <div class="m-4">
-            <p>目前选择的模型信息</p>
+            <p>选择测评数据</p>
+            <el-select
+                v-model="selectedDataSource"
+                :disabled="isSelect"
+                placeholder="Select"
+                style="width: 280px"
+            >
+              <el-option
+                  v-for="(dataSource, index) in dataSources"
+                  :key="index"
+                  :label="dataSource"
+                  :value="dataSource"
+              />
+            </el-select>
+          </div>
+
+          <div class="m-4">
+            <p>目前选择的参数信息</p>
             <div class="box-card">
               <el-row :gutter="20">
                 <el-col :span="8">
-                  <el-text class="mx-1">模型：</el-text>
+                  <el-text class="mx-1">模型A: </el-text>
                 </el-col>
                 <el-col :span="16">
-                  <el-text class="mx-1">{{ selectedModel }}</el-text>
+                  <el-text class="mx-1">{{ selectedModelA }}</el-text>
                 </el-col>
               </el-row>
               <el-row :gutter="20">
                 <el-col :span="8">
-                  <el-text class="mx-1">参数量：</el-text>
+                  <el-text class="mx-1">模型B: </el-text>
                 </el-col>
                 <el-col :span="16">
-                  <el-text class="mx-1">{{ paramSize }}</el-text>
+                  <el-text class="mx-1">{{ selectedModelB }}</el-text>
                 </el-col>
               </el-row>
               <el-row>
                 <el-col :span="8">
-                  <el-text class="mx-1">记载方式：</el-text>
+                  <el-text class="mx-1">测评数据: </el-text>
                 </el-col>
                 <el-col :span="16">
-                  <el-text class="mx-1"></el-text>
+                  <el-text class="mx-1">{{ selectedDataSource }}</el-text>
                 </el-col>
               </el-row>
               <el-row>
-                <el-col :span="8">
-                  <el-text class="mx-1">模型架构：</el-text>
+                <el-col :span="10">
+                  <el-text class="mx-1">模型加载方式：</el-text>
                 </el-col>
-                <el-col :span="16">
+                <el-col :span="14">
                   <el-text class="mx-1"></el-text>
                 </el-col>
               </el-row>
@@ -234,55 +266,48 @@ const removeReInput = () => {
       </el-aside>
       <el-main v-loading="loadingModel">
         <div>
-          <p style="margin-bottom: 6px">请输入测试的Prompt</p>
-          <el-input
-              v-model="inputText"
-              :rows="5"
-              placeholder="Please input"
-              type="textarea"
-          />
+          <p style="margin-bottom: 6px">请选择测试内容</p>
+          <ul class="input_list">
+            <li class ='input_item' v-for="(input, index) in inputContext" :key="index">{{ input }}</li>
+          </ul>
           <div style="margin-top: 6px; margin-bottom: 6px">
-            <el-button color="#626aef" @click="submitPrompt">提交</el-button>
-            <el-button type="warning" @click="removeContext">清空</el-button>
-          </div>
-        </div>
-        <div>
-          <p style="margin-bottom: 6px">模型的输出结果</p>
-          <div class="demo-rate-block">
-            <el-text class="mx-1">{{ modelAnswer }}</el-text>
+            <el-button color="#626aef" @click="submitPrompt">下一条</el-button>
+            <el-button type="warning" @click="removeContext">提交</el-button>
           </div>
         </div>
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :span="8">
             <div>
-              <p style="margin-bottom: 6px; margin-top: 6px">可参考的答案</p>
+              <p style="margin-bottom: 6px; margin-top: 6px">模型A给出的回复</p>
               <div class="demo-rate-block">
-                <el-text class="mx-1">{{ answerRight }}</el-text>
+                <el-text class="mx-1">{{ modelAAnswer }}</el-text>
               </div>
             </div>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <div>
-              <p style="margin-bottom: 6px; margin-top: 6px">请你给模型的输出结果打个分</p>
+              <p style="margin-bottom: 6px; margin-top: 6px">模型B给出的回复</p>
               <div class="demo-rate-block">
-                <el-rate v-model="answerRate" size="large"/>
+                <el-text class="mx-1">{{ modelBAnswer }}</el-text>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div>
+              <p style="margin-bottom: 6px; margin-top: 6px">请选择出回复较好的模型</p>
+              <div class="demo-rate-block">
+                <el-radio-group v-model="betterModel">
+                  <el-radio :label="3">模型A</el-radio>
+                  <el-radio :label="6">模型B</el-radio>
+                  <el-radio :label="9">一样好</el-radio>
+                </el-radio-group>
               </div>
             </div>
           </el-col>
         </el-row>
-        <div>
-          <p style="margin-bottom: 6px; margin-top: 6px">如果觉得模型的输出结果不够好，麻烦进行改写哦～</p>
-          <el-input
-              v-model="reInputText"
-              :rows="4"
-              placeholder="Please input"
-              type="textarea"
-          />
-        </div>
-        <div style="margin-top: 6px; margin-bottom: 6px">
-          <el-button color="#626aef" @click="submitReInput">提交</el-button>
-          <el-button type="warning" @click="removeReInput">清空</el-button>
-        </div>
+        <div style="margin-top: 6px;">
+            <el-button color="#626aef" @click="submitPrompt">提交结果</el-button>
+          </div>
       </el-main>
     </el-container>
   </div>
@@ -324,5 +349,30 @@ const removeReInput = () => {
   border-style: solid;
   height: 150px;
   padding-top: 50px;
+}
+
+.input_list {
+  height: 300px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-color: #e6e8eb;
+  border-width: 1px;
+  border-style: solid;
+  overflow: auto;
+}
+
+.input_list .input_item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  background: rgb(238, 245, 254);
+  margin: 10px;
+  color: rgb(89, 154, 244);
+}
+
+.input_item {
+  margin-top: 10px;
 }
 </style>
