@@ -72,6 +72,7 @@ function loadModel() {
       }
     }).then((res) => {
       const data = res.data
+      inputContext.value = data['data']
       loadingModel.value = false
       ElMessage({
         showClose: true,
@@ -95,79 +96,29 @@ const inputContext = ref([1, 2, 3, 4, 5, 6, 7, 8, 9])
 
 const betterModel = ref(null)
 
-const inputText = ref(null)
+async function nextIndex() {
+  axios.get('webapi/nextIndex', {
+    params: {
+    }
+  }).then((res) => {
+    const data = res.data
+    inputContext.value = data['data']
+  }).catch((error) => {
+    ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '获取失败',
+        type: 'error'
+    })
+  })
+}
+
 const modelAnswer = ref(null)
-const answerOK = ref(false)
-const answerRight = ref(null)
 
-async function submitPrompt() {
-  if (!inputText.value) {
-    ElMessage({
-      showClose: true,
-      grouping: true,
-      message: '请先输入内容！',
-      type: 'error'
-    })
-  } else {
-    answerOK.value = true
-    const data = {
-      "prompt": inputText.value
-    }
-    await axios.post('getAnswer', data).then(res => {
-      answerOK.value = false
-      modelAnswer.value = res.data.msg
-    }).catch(error => {
-      ElMessage({
-        showClose: true,
-        grouping: true,
-        message: '服务器出错了！请稍后再试～',
-        type: 'error'
-      })
-    })
-
-    await axios.get('getRightAnswer', {params: data}).then(res => {
-      answerRight.value = res.data.msg
-    })
-  }
-}
-
-const removeContext = () => {
-  inputText.value = null
-  modelAnswer.value = null
-}
-
-const answerRate = ref(null)
-
-const reInputText = ref(null)
-const submitReInput = async () => {
-  if (!reInputText.value) {
-    ElMessage({
-      showClose: true,
-      grouping: true,
-      message: '请先输入改写后的内容！',
-      type: 'error'
-    })
-  } else {
-    const data = {
-      "rewrite": reInputText.value
-    }
-    await axios.post('reWriteAnswer', data).then(res => {
-    }).catch(error => {
-      ElMessage({
-        showClose: true,
-        grouping: true,
-        message: '服务器出错了！请稍后再试～',
-        type: 'error'
-      })
-    })
-  }
-}
-
-const submitResult = () => {
-  const data = {
-    'model_name': selectedModelA.value
-  }
-  axios.get('webapi/submitResult', data)
+const submitInput = () => {
+  axios.post('webapi/submitInput', {
+    'inputText': inputContext.value
+  }).then((res) => {}).catch((error) => {})
 }
 </script>
 
@@ -278,11 +229,11 @@ const submitResult = () => {
         <div>
           <p style="margin-bottom: 6px">请选择测试内容</p>
           <ul class="input_list">
-            <li class ='input_item' v-for="(input, index) in inputContext" :key="index">{{ input }}</li>
+            <li class ='input_item' v-for="(input, index) in inputContext" :key="index">{{ input['content'] }}</li>
           </ul>
           <div style="margin-top: 6px; margin-bottom: 6px">
-            <el-button color="#626aef" @click="submitPrompt">下一条</el-button>
-            <el-button type="warning" @click="removeContext">提交</el-button>
+            <el-button color="#626aef" @click="nextIndex">下一条</el-button>
+            <el-button type="warning" @click="submitInput">提交</el-button>
           </div>
         </div>
         <el-row :gutter="20">
