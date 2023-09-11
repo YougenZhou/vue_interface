@@ -148,15 +148,10 @@ const submitResult = () => {
         type: 'error'
     })
   } else {
-    if (betterModel.value == 3) {
-      betterModelName.value = selectedModelA.value
-    } else if (betterModel.value == 6) {
-      betterModelName.value = selectedModelB.value
-    } else {
-      betterModelName.value = 'both'
-    }
     axios.post('webapi/submitResult', {
-      'betterModel': betterModelName.value
+      'modelA': selectedModelA.value,
+      'modelB': selectedModelB.value,
+      'betterModel': betterModel.value
     }).then((res) => {
       ElMessage({
         showClose: true,
