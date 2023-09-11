@@ -113,12 +113,66 @@ async function nextIndex() {
   })
 }
 
-const modelAnswer = ref(null)
+const modelAAnswer = ref(null)
+const modelBAnswer = ref(null)
+const submitInputFinish = ref(false)
 
 const submitInput = () => {
+  submitInputFinish.value = true
   axios.post('webapi/submitInput', {
     'inputText': inputContext.value
-  }).then((res) => {}).catch((error) => {})
+  }).then((res) => {
+    const data = res.data
+    modelAAnswer.value = data['data']['answer1']
+    modelBAnswer.value = data['data']['answer2']
+    submitInputFinish.value = false
+  }).catch((error) => {
+    ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '获取模型回复失败',
+        type: 'error'
+    })
+    submitInputFinish.value = false
+  })
+}
+
+const betterModelName = ref(null)
+
+const submitResult = () => {
+  if (!betterModel.value || !selectedModelA.value || !selectedModelB.value) {
+    ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '请对模型做出评价',
+        type: 'error'
+    })
+  } else {
+    if (betterModel.value == 3) {
+      betterModelName.value = selectedModelA.value
+    } else if (betterModel.value == 6) {
+      betterModelName.value = selectedModelB.value
+    } else {
+      betterModelName.value = 'both'
+    }
+    axios.post('webapi/submitResult', {
+      'betterModel': betterModelName.value
+    }).then((res) => {
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '提交成功',
+        type: 'success'
+    })
+    }).catch((error) => {
+      ElMessage({
+        showClose: true,
+        grouping: true,
+        message: '提交失败',
+        type: 'error'
+    })
+    })
+  }
 }
 </script>
 
@@ -238,7 +292,7 @@ const submitInput = () => {
         </div>
         <el-row :gutter="20">
           <el-col :span="8">
-            <div>
+            <div v-loading="submitInputFinish">
               <p style="margin-bottom: 6px; margin-top: 6px">模型A给出的回复</p>
               <div class="demo-rate-block">
                 <el-text class="mx-1">{{ modelAAnswer }}</el-text>
@@ -246,7 +300,7 @@ const submitInput = () => {
             </div>
           </el-col>
           <el-col :span="8">
-            <div>
+            <div v-loading="submitInputFinish">
               <p style="margin-bottom: 6px; margin-top: 6px">模型B给出的回复</p>
               <div class="demo-rate-block">
                 <el-text class="mx-1">{{ modelBAnswer }}</el-text>
@@ -308,8 +362,9 @@ const submitInput = () => {
   border-color: #e6e8eb;
   border-width: 1px;
   border-style: solid;
-  height: 150px;
-  padding-top: 50px;
+  height: 300px;
+  padding-top: 10px;
+  line-height: 32px;
 }
 
 .input_list {
@@ -335,5 +390,9 @@ const submitInput = () => {
 
 .input_item {
   margin-top: 10px;
+}
+
+.el-radio-group {
+  margin-top: 124px;
 }
 </style>
